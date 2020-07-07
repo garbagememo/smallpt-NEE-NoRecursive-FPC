@@ -80,7 +80,7 @@ END;
 
 FUNCTION VecNorm(V:VecRecord):VecRecord;inline;
 BEGIN
-    result:=V/VecLen(V) ;
+    result:=V/sqrt(V.x*V.x+V.y*V.y+V.z*V.z);
 END;
 FUNCTION VecDot(const V1,V2 :VecRecord):real;//内積
 BEGIN

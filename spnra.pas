@@ -49,7 +49,7 @@ var
   RefRay:RayRecord;
   nc,nt,nnt,ddn,cos2t,q,a,b,c,R0,Re,RP,Tr,TP:real;
   tDir:VecRecord;
-  EL,sw,su,sv,l:VecRecord;
+  EL,sw,su,sv,l,tw,tu,tv:VecRecord;
   cos_a_max,eps1,eps2,eps2s,cos_a,sin_a,phi,omega:real;
   cl,cf,bcf:VecRecord;
   E,depth:integer;
@@ -72,7 +72,8 @@ BEGIN
       p:=f.y
     ELSE
       p:=f.z;
-    cl:=cl+VecMul(cf,obj.e*E);
+    tw:=obj.e*E;
+    cl:=cl+VecMul(cf,tw);
     IF (depth>5) THEN BEGIN
       IF random<p THEN
         f:=f/p
@@ -93,7 +94,8 @@ BEGIN
           u:=VecNorm(CreateVec(1,0,0)/w );
         END;
         v:=w/u;
-        d := VecNorm(u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1-r2));
+        tu:=u*(cos(r1)*r2s);tu:=tu+v*(sin(r1)*r2s);tu:=tu+w*sqrt(1-r2);
+        d := VecNorm(tu);
 
       // Loop over any lights
         EL:=ZeroVec;
@@ -115,11 +117,13 @@ BEGIN
             (*半球の内外=cos_aがマイナスとsin_aが＋、－で場合分け*)
             (*半球内部なら乱反射した寄与全てを取ればよい・・はず*)
             eps1:=2*pi*random;eps2:=random;eps2s:=sqrt(eps2);
-            l:=VecNorm(u*cos(eps1)*eps2s + v*sin(eps1)*eps2s + w*sqrt(1-eps2));
+            tu:=u*(cos(eps1)*eps2s);tu:=tu+v*(sin(eps1)*eps2s);tu:=tu+w*sqrt(1-eps2);
+            l:=VecNorm(tu);
             IF intersect(CreateRay(x,l),t,id) THEN BEGIN
               IF id=i THEN BEGIN
                 tr:=l*nl;
-                EL:=EL+VecMul(f,s.e*tr);
+                tw:=s.e*tr;
+                EL:=EL+VecMul(f,tw);
               END;
             END;
             CONTINUE;
@@ -130,28 +134,32 @@ BEGIN
           sin_a := sqrt(1-cos_a*cos_a);
           IF (1-2*random)<0 THEN sin_a:=-sin_a; 
           phi := 2*PI*eps2;
-          l := su*cos(phi)*sin_a + sv*sin(phi)*sin_a + sw*cos_a;
-          l:=VecNorm(l);
+          tw:=sw*(cos(phi)*sin_a);tw:=tw+sv*(sin(phi)*sin_a);tw:=tw+sw*cos_a;
+          l:=VecNorm(tw);
           IF (intersect(CreateRay(x,l), t, id) ) THEN BEGIN 
             IF id=i THEN BEGIN  // shadow ray
               omega := 2*PI*(1-cos_a_max);
               tr:=l*nl;
               IF tr<0 THEN tr:=0;
-              EL := EL + VecMul(f,s.e*tr*omega)*M_1_PI;  // 1/pi for brdf
+              tw:=s.e*tr*omega;tw:=VecMul(f,tw);tw:=tw*M_1_PI;
+              EL := EL + tw;  // 1/pi for brdf
             END;
           END;
         END;(*for*)
-        cl:= cl+VecMul(bcf,(obj.e*E+EL) );
+        tw:=obj.e*e+EL;
+        cl:= cl+VecMul(bcf,tw );
         E:=0;
         r:=CreateRay(x,d)
       END;(*DIFF*)
       SPEC:BEGIN
-        cl:=cl+VecMul(bcf,obj.e*E);
-        E:=1;
-        r:=CreateRay(x,r.d-n*2*(n*r.d));
+        tw:=obj.e*e;
+        cl:=cl+VecMul(bcf,tw);
+        E:=1;tv:=n*2*(n*r.d) ;tv:=r.d-tv;
+        r:=CreateRay(x,tv);
       END;(*SPEC*)
       REFR:BEGIN
-        RefRay:=CreateRay(x,r.d-n*2*(n*r.d) );
+        tv:=n*2*(n*r.d) ;tv:=r.d-tv;
+        RefRay:=CreateRay(x,tv);
         into:= (n*nl>0);
         nc:=1;nt:=1.5; IF into THEN nnt:=nc/nt ELSE nnt:=nt/nc; ddn:=r.d*nl;
         cos2t:=1-nnt*nnt*(1-ddn*ddn);
