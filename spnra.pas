@@ -126,23 +126,24 @@ BEGIN
                 EL:=EL+VecMul(f,tw);
               END;
             END;
-            CONTINUE;
-          END;
-          cos_a_max := sqrt(1-tr );
-          eps1 := random; eps2:=random;
-          cos_a := 1-eps1+eps1*cos_a_max;
-          sin_a := sqrt(1-cos_a*cos_a);
-          IF (1-2*random)<0 THEN sin_a:=-sin_a; 
-          phi := 2*PI*eps2;
-          tw:=sw*(cos(phi)*sin_a);tw:=tw+sv*(sin(phi)*sin_a);tw:=tw+sw*cos_a;
-          l:=VecNorm(tw);
-          IF (intersect(CreateRay(x,l), t, id) ) THEN BEGIN 
-            IF id=i THEN BEGIN  // shadow ray
-              omega := 2*PI*(1-cos_a_max);
-              tr:=l*nl;
-              IF tr<0 THEN tr:=0;
-              tw:=s.e*tr*omega;tw:=VecMul(f,tw);tw:=tw*M_1_PI;
-              EL := EL + tw;  // 1/pi for brdf
+          END
+          ELSE BEGIN //半球外部の場合;
+            cos_a_max := sqrt(1-tr );
+            eps1 := random; eps2:=random;
+            cos_a := 1-eps1+eps1*cos_a_max;
+            sin_a := sqrt(1-cos_a*cos_a);
+            IF (1-2*random)<0 THEN sin_a:=-sin_a; 
+            phi := 2*PI*eps2;
+            tw:=sw*(cos(phi)*sin_a);tw:=tw+sv*(sin(phi)*sin_a);tw:=tw+sw*cos_a;
+            l:=VecNorm(tw);
+            IF (intersect(CreateRay(x,l), t, id) ) THEN BEGIN 
+              IF id=i THEN BEGIN  // shadow ray
+                omega := 2*PI*(1-cos_a_max);
+                tr:=l*nl;
+                IF tr<0 THEN tr:=0;
+                tw:=s.e*tr*omega;tw:=VecMul(f,tw);tw:=tw*M_1_PI;
+                EL := EL + tw;  // 1/pi for brdf
+              END;
             END;
           END;
         END;(*for*)
